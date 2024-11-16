@@ -27,22 +27,16 @@ double ExtLowerLowBuffer[];
 
 // config
 input group "Section :: Main";
-input int InpPeriods = 2; // Periods
+input int InpPeriod = 2; // Period
 
 input group "Section :: Style";
-input int InpArrowShift = 20; // Arrow shift
+input int InpArrowShift = 10; // Arrow shift
 input ENUM_ARROW_SIZE InpArrowSize = SMALL_ARROW_SIZE; // Arrow size
 input color InpHigherHighColor = clrGreen; // Higher high color
 input color InpLowerLowColor = clrRed; // Lower low color
 
 input group "Section :: Dev";
 input bool InpDebugEnabled = false; // Enable debug (verbose logging)
-
-// constants
-//...
-
-// runtime
-//...
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -123,11 +117,12 @@ int OnCalculate(const int rates_total,
                 const long &volume[],
                 const int &spread[])
   {
-   if(rates_total == prev_calculated || rates_total < InpPeriods || IsStopped())
+   if(rates_total == prev_calculated || rates_total < InpPeriod || IsStopped())
      {
       return rates_total;
      }
 
+   ArraySetAsSeries(time, true);
    ArraySetAsSeries(high, true);
    ArraySetAsSeries(low, true);
 
@@ -137,12 +132,12 @@ int OnCalculate(const int rates_total,
       PrintFormat("RatesTotal: %i, PrevCalculated: %i, Limit: %i", rates_total, prev_calculated, limit);
      }
 
-   for(int i = InpPeriods; i < limit - InpPeriods; i++)
+   for(int i = InpPeriod; i < limit - InpPeriod; i++)
      {
       bool isHigherHigh = true;
       bool isLowerLow = true;
 
-      for(int j = i - InpPeriods; j < i; j++)
+      for(int j = i - InpPeriod; j < i; j++)
         {
          isHigherHigh = isHigherHigh && high[i] > high[j];
          isLowerLow = isLowerLow && low[i] < low[j];
@@ -152,7 +147,7 @@ int OnCalculate(const int rates_total,
            }
         }
 
-      for(int j = i + 1; j < i + 1 + InpPeriods; j++)
+      for(int j = i + 1; j < i + 1 + InpPeriod; j++)
         {
          isHigherHigh = isHigherHigh && high[i] >= high[j];
          isLowerLow = isLowerLow && low[i] <= low[j];
@@ -162,8 +157,31 @@ int OnCalculate(const int rates_total,
            }
         }
 
-      ExtHigherHighBuffer[i] = isHigherHigh ? high[i] : EMPTY_VALUE;
-      ExtLowerLowBuffer[i] = isLowerLow ? low[i] : EMPTY_VALUE;
+      if(isHigherHigh)
+        {
+         ExtHigherHighBuffer[i] = high[i];
+         if(InpDebugEnabled)
+           {
+            PrintFormat("Higher High found on %f at %s", ExtHigherHighBuffer[i], TimeToString(time[i]));
+           }
+        }
+      else
+        {
+         ExtHigherHighBuffer[i] = EMPTY_VALUE;
+        }
+
+      if(isLowerLow)
+        {
+         ExtLowerLowBuffer[i] = low[i];
+         if(InpDebugEnabled)
+           {
+            PrintFormat("Lower Low found on %f at %s", ExtLowerLowBuffer[i], TimeToString(time[i]));
+           }
+        }
+      else
+        {
+         ExtLowerLowBuffer[i] = EMPTY_VALUE;
+        }
      }
 
    return rates_total;
