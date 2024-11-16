@@ -134,15 +134,23 @@ int OnCalculate(const int rates_total,
       bool isHigherHigh = true;
       bool isLowerLow = true;
 
-      for(int j = i - InpPeriods; j <= i + InpPeriods; j++)
+      for(int j = i - InpPeriods; j < i; j++)
         {
-         if(isHigherHigh && i != j && high[i] < high[j])
+         isHigherHigh = isHigherHigh && high[i] > high[j];
+         isLowerLow = isLowerLow && low[i] < low[j];
+         if(!isHigherHigh && !isLowerLow)
            {
-            isHigherHigh = false;
+            break;
            }
-         if(isLowerLow && i != j && low[i] > low[j])
+        }
+
+      for(int j = i + 1; j < i + 1 + InpPeriods; j++)
+        {
+         isHigherHigh = isHigherHigh && high[i] >= high[j];
+         isLowerLow = isLowerLow && low[i] <= low[j];
+         if(!isHigherHigh && !isLowerLow)
            {
-            isLowerLow = false;
+            break;
            }
         }
 
