@@ -13,7 +13,13 @@
 #property indicator_buffers 2
 
 // types
-//...
+enum ENUM_ARROW_SIZE
+  {
+   SMALL_ARROW_SIZE = 1, // Small
+   REGULAR_ARROW_SIZE = 2, // Regular
+   BIG_ARROW_SIZE = 3, // Big
+   HUGE_ARROW_SIZE = 4 // Huge
+  };
 
 // buffers
 double ExtHigherHighBuffer[];
@@ -21,14 +27,16 @@ double ExtLowerLowBuffer[];
 
 // config
 input group "Section :: Main";
-input int InpPeriods = 3;
+input int InpPeriods = 2; // Periods
 
 input group "Section :: Style";
-input int InpArrowShift = 20;
-input int InpArrowSize = 2;
+input int InpArrowShift = 20; // Arrow shift
+input ENUM_ARROW_SIZE InpArrowSize = SMALL_ARROW_SIZE; // Arrow size
+input color InpHigherHighColor = clrGreen; // Higher high color
+input color InpLowerLowColor = clrRed; // Lower low color
 
 input group "Section :: Dev";
-input bool InpDebugEnabled = true; // Enable debug (verbose logging)
+input bool InpDebugEnabled = false; // Enable debug (verbose logging)
 
 // constants
 //...
@@ -58,7 +66,7 @@ int OnInit()
    PlotIndexSetInteger(0, PLOT_ARROW, 217);
    PlotIndexSetInteger(0, PLOT_ARROW_SHIFT, -InpArrowShift);
    PlotIndexSetInteger(0, PLOT_LINE_WIDTH, InpArrowSize);
-   PlotIndexSetInteger(0, PLOT_LINE_COLOR, clrGreen);
+   PlotIndexSetInteger(0, PLOT_LINE_COLOR, InpHigherHighColor);
 
    ArraySetAsSeries(ExtLowerLowBuffer, true);
    ArrayInitialize(ExtLowerLowBuffer, EMPTY_VALUE);
@@ -70,7 +78,7 @@ int OnInit()
    PlotIndexSetInteger(1, PLOT_ARROW, 218);
    PlotIndexSetInteger(1, PLOT_ARROW_SHIFT, InpArrowShift);
    PlotIndexSetInteger(1, PLOT_LINE_WIDTH, InpArrowSize);
-   PlotIndexSetInteger(1, PLOT_LINE_COLOR, clrRed);
+   PlotIndexSetInteger(1, PLOT_LINE_COLOR, InpLowerLowColor);
 
    if(InpDebugEnabled)
      {
@@ -154,8 +162,8 @@ int OnCalculate(const int rates_total,
            }
         }
 
-      ExtHigherHighBuffer[i] = ExtHigherHighBuffer[i - 1] == EMPTY_VALUE && isHigherHigh ? high[i] : EMPTY_VALUE;
-      ExtLowerLowBuffer[i] = ExtLowerLowBuffer[i - 1] == EMPTY_VALUE && isLowerLow ? low[i] : EMPTY_VALUE;
+      ExtHigherHighBuffer[i] = isHigherHigh ? high[i] : EMPTY_VALUE;
+      ExtLowerLowBuffer[i] = isLowerLow ? low[i] : EMPTY_VALUE;
      }
 
    return rates_total;
