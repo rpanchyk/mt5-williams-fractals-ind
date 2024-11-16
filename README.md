@@ -1,5 +1,5 @@
-# Forex Market Structure Indicator for MT5
-Indicator shows market structure in MetaTrader 5.
+# Forex Williams Fractals Indicator for MT5
+Indicator shows Williams fractals in MetaTrader 5.
 
 ## Installation
 - Open data folder in MetaTrader from menu `File -> Open Data Folder`.
