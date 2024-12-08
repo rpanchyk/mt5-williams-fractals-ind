@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2024, rpanchyk"
 #property link        "https://github.com/rpanchyk"
-#property version     "1.00"
+#property version     "1.01"
 #property description "Indicator shows Williams fractals"
 
 #property indicator_chart_window
@@ -27,16 +27,14 @@ double ExtLowerLowBuffer[];
 
 // config
 input group "Section :: Main";
-input int InpPeriod = 2; // Period
+input bool InpDebugEnabled = false; // Enable debug (verbose logging)
+input int InpPeriod = 10; // Period
 
 input group "Section :: Style";
 input int InpArrowShift = 10; // Arrow shift
 input ENUM_ARROW_SIZE InpArrowSize = SMALL_ARROW_SIZE; // Arrow size
 input color InpHigherHighColor = clrGreen; // Higher high color
 input color InpLowerLowColor = clrRed; // Lower low color
-
-input group "Section :: Dev";
-input bool InpDebugEnabled = false; // Enable debug (verbose logging)
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -51,7 +49,7 @@ int OnInit()
    IndicatorSetInteger(INDICATOR_DIGITS, _Digits);
 
    ArraySetAsSeries(ExtHigherHighBuffer, true);
-   ArrayInitialize(ExtHigherHighBuffer, EMPTY_VALUE);
+   ArrayInitialize(ExtHigherHighBuffer, 0);
 
    SetIndexBuffer(0, ExtHigherHighBuffer, INDICATOR_DATA);
    PlotIndexSetString(0, PLOT_LABEL, "Higher High");
@@ -63,7 +61,7 @@ int OnInit()
    PlotIndexSetInteger(0, PLOT_LINE_COLOR, InpHigherHighColor);
 
    ArraySetAsSeries(ExtLowerLowBuffer, true);
-   ArrayInitialize(ExtLowerLowBuffer, EMPTY_VALUE);
+   ArrayInitialize(ExtLowerLowBuffer, 0);
 
    SetIndexBuffer(1, ExtLowerLowBuffer, INDICATOR_DATA);
    PlotIndexSetString(1, PLOT_LABEL, "Lower Low");
@@ -91,11 +89,8 @@ void OnDeinit(const int reason)
       Print("WilliamsFractals indicator deinitialization started");
      }
 
-   ArrayFill(ExtHigherHighBuffer, 0, ArraySize(ExtHigherHighBuffer), EMPTY_VALUE);
-   ArrayFree(ExtHigherHighBuffer);
-
-   ArrayFill(ExtLowerLowBuffer, 0, ArraySize(ExtLowerLowBuffer), EMPTY_VALUE);
-   ArrayFree(ExtLowerLowBuffer);
+   ArrayFill(ExtHigherHighBuffer, 0, ArraySize(ExtHigherHighBuffer), 0);
+   ArrayFill(ExtLowerLowBuffer, 0, ArraySize(ExtLowerLowBuffer), 0);
 
    if(InpDebugEnabled)
      {
@@ -121,23 +116,24 @@ int OnCalculate(const int rates_total,
      {
       return rates_total;
      }
+   int gap = rates_total - prev_calculated;
+   int startIndex = 1 + InpPeriod;
+   int endIndex = gap > InpPeriod ? gap - startIndex : gap + startIndex;
+   if(InpDebugEnabled)
+     {
+      PrintFormat("RatesTotal: %i, PrevCalculated: %i, StartIndex: %i, EndIndex: %i", rates_total, prev_calculated, startIndex, endIndex);
+     }
 
    ArraySetAsSeries(time, true);
    ArraySetAsSeries(high, true);
    ArraySetAsSeries(low, true);
 
-   int limit = rates_total - (prev_calculated < 1 ? 1 : prev_calculated);
-   if(InpDebugEnabled)
-     {
-      PrintFormat("RatesTotal: %i, PrevCalculated: %i, Limit: %i", rates_total, prev_calculated, limit);
-     }
-
-   for(int i = InpPeriod; i < limit - InpPeriod; i++)
+   for(int i = startIndex; i < endIndex; i++)
      {
       bool isHigherHigh = true;
       bool isLowerLow = true;
 
-      for(int j = i - InpPeriod; j < i; j++)
+      for(int j = i - InpPeriod; j < i; j++) // go from left to current bar
         {
          isHigherHigh = isHigherHigh && high[i] > high[j];
          isLowerLow = isLowerLow && low[i] < low[j];
@@ -147,7 +143,7 @@ int OnCalculate(const int rates_total,
            }
         }
 
-      for(int j = i + 1; j < i + 1 + InpPeriod; j++)
+      for(int j = i + 1; j < i + 1 + InpPeriod; j++) // go from current to right bar
         {
          isHigherHigh = isHigherHigh && high[i] >= high[j];
          isLowerLow = isLowerLow && low[i] <= low[j];
@@ -167,7 +163,7 @@ int OnCalculate(const int rates_total,
         }
       else
         {
-         ExtHigherHighBuffer[i] = EMPTY_VALUE;
+         ExtHigherHighBuffer[i] = 0;
         }
 
       if(isLowerLow)
@@ -180,7 +176,7 @@ int OnCalculate(const int rates_total,
         }
       else
         {
-         ExtLowerLowBuffer[i] = EMPTY_VALUE;
+         ExtLowerLowBuffer[i] = 0;
         }
      }
 
